@@ -1,24 +1,35 @@
 import streamlit as st
-from transformers import pipeline
 import pandas as pd
+from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 
 # -------------------------------
-# 1️⃣ Load Hugging Face Pipelines (CPU-safe)
+# 1️⃣ Load Hugging Face Pipelines (CPU-safe, no meta tensor)
 # -------------------------------
 @st.cache_resource
 def load_models():
-    # Force device=-1 to use CPU
-    sentiment_model = pipeline(
+    # Sentiment Analysis Model
+    sentiment_model_name = "distilbert-base-uncased-finetuned-sst-2-english"
+    sentiment_tokenizer = AutoTokenizer.from_pretrained(sentiment_model_name)
+    sentiment_model = AutoModelForSequenceClassification.from_pretrained(sentiment_model_name)
+    sentiment_pipeline = pipeline(
         "sentiment-analysis",
-        model="distilbert-base-uncased-finetuned-sst-2-english",
-        device=-1
+        model=sentiment_model,
+        tokenizer=sentiment_tokenizer,
+        device=-1  # CPU only
     )
-    intent_model = pipeline(
+
+    # Zero-Shot Intent Classification Model
+    intent_model_name = "facebook/bart-large-mnli"
+    intent_tokenizer = AutoTokenizer.from_pretrained(intent_model_name)
+    intent_model = AutoModelForSequenceClassification.from_pretrained(intent_model_name)
+    intent_pipeline = pipeline(
         "zero-shot-classification",
-        model="facebook/bart-large-mnli",
-        device=-1
+        model=intent_model,
+        tokenizer=intent_tokenizer,
+        device=-1  # CPU only
     )
-    return sentiment_model, intent_model
+
+    return sentiment_pipeline, intent_pipeline
 
 sentiment_analyzer, intent_classifier = load_models()
 
